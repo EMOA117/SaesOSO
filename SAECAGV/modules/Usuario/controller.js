@@ -3,62 +3,19 @@ const bcryptjs = require("bcryptjs");
 const pool = require("../../database");
 const { env } = require("../../credenciales");
 
-async function getSex(id_sex) {
-    const sexo = await pool.query(
-        `SELECT * FROM csexo WHERE id_sex =${id_sex}`
-    );
-    return sexo[0].sexo.trim();
-}
 
 module.exports = {
-    async signUp(req, res) {
-        const { email } = req.body;
-        const { nombre } = req.body;
-        const { fecha } = req.body;
-        const { Password2 } = req.body;
-        const { SelectAlcaldia } = req.body;
-        const { genero } = req.body;
-
-        //funcion hash para encriptar la contraseña de tal forma que sea seguro y lo podamos recuperar despues
-        let passHash = await bcryptjs.hash(Password2, 8);
-
-        let newUser = [email, nombre, fecha, passHash, SelectAlcaldia, genero];
-        try {
-            try {
-                const correos_usuarios = await pool.query(
-                    "SELECT * FROM musuario WHERE (cor_usu = ?)",
-                    [email]
-                );
-                if (correos_usuarios[0].id_usu) {
-                    res.render("registro", {
-                        error: "Ese correo ya esta registrado usa otro diferente",
-                    });
-                } else {
-                    res.redirect("error");
-                }
-            } catch (error) {
-                await pool.query(
-                    "INSERT INTO musuario (cor_usu, nom_usu, fec_nac, con_usu, id_alc, id_sex) VALUES (?,?,?,?,?,?)",
-                    newUser
-                );
-                res.render("iniciarSesion");
-            }
-        } catch (err) {
-            res.redirect("/error");
-            console.log(err);
-        }
-    },
-
+    
     async login(req, res) {
         try {
             const user = req.body.username;
             const pass = req.body.password;
 
             if (!user || !pass) {
-                res.render("iniciarSesion");
+                res.render("login");
             } else {
                 pool.query(
-                    "SELECT * FROM musuario WHERE cor_usu = ?",
+                    "SELECT * FROM musuario WHERE Matricula = ?",
                     [user],
                     async (error, results) => {
                         // si no encuentra resultados mandar error
@@ -66,11 +23,11 @@ module.exports = {
                             res.redirect("error");
                         }
                         if (
-                            results.length == 0 ||
-                            !(await bcryptjs.compare(pass, results[0].con_usu))
+                            results.Id_Usu == 1
                         ) {
+
                             pool.query(
-                                "SELECT * FROM madministrador WHERE Cor_Adm = ?",
+                                "SELECT * FROM Usuario WHERE Matriculaj,h = ?",
                                 [user],
                                 async (error, results) => {
                                     console.log(results);
@@ -167,7 +124,7 @@ module.exports = {
 
     logout(req, res) {
         res.clearCookie("jwt");
-        return res.redirect("/");
+        return res.redirect("login");
     },
 
     async datosperfil(req, res, next) {
